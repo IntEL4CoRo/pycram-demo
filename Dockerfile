@@ -1,34 +1,44 @@
-FROM pycram/pycram:dev
+FROM intel4coro/jupyter-ros2:jazzy-py3.12
 
-USER root
-ENV SHELL=/bin/bash
-# Create non-root user jovyan
-ENV NB_USER=jovyan
-ENV USER=${NB_USER}
-RUN adduser --disabled-password \
-    --gecos "Default user" \
-    ${NB_USER}
+# Setup up a ROS workspace
+ENV ROS_WS=${HOME}/workspace/ros
+RUN mkdir -p ${ROS_WS}
+
+# Clone pycram and its dependencies repos
+WORKDIR ${ROS_WS}/src
+RUN vcs import --input https://raw.githubusercontent.com/cram2/pycram/dev/rosinstall/pycram-ros2-https.rosinstall
+
+# init submodule repo with ssh url in .gitmodules
+RUN  cd ${ROS_WS}/src/pycram \
+  && perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules \
+  && git submodule sync \
+  && git submodule update --init --recursive
+
+# # Building ROS workspace
+WORKDIR ${ROS_WS}
+RUN source /opt/ros/jazzy/setup.bash && \
+    colcon build --symlink-install --parallel-workers 4
+RUN echo "source ${ROS_WS}/install/setup.bash" >> ${HOME}/.bashrc
+
+# # Install Python dependencies
+WORKDIR ${ROS_WS}/src/pycram
+RUN pip install -r requirements.txt
 
 # Steps copy from github CI
-WORKDIR /opt/ros/overlay_ws/src/pycram
-RUN pip3 install -r requirements.txt && \
-    apt-get update && \
-    apt-get install -y libpq-dev && \
-    pip3 install -r requirements-resolver.txt && \
-    pip3 install jupytext treon
-
-RUN cd /opt/ros/overlay_ws/src/pycram/examples && \
-    rm -rf tmp && \
-    mkdir tmp && \
+RUN pip install jupytext treon
+RUN cd ${ROS_WS}/src/pycram/examples && \
+    rm -rf ../notebooks && \
+    mkdir ../notebooks && \
     jupytext --to notebook *.md && \
-    mv *.ipynb tmp
+    mv *.ipynb ../notebooks
 
-RUN chown -R ${NB_USER}:${NB_USER} /opt/ros/overlay_ws/src/pycram
-RUN git config --global --add safe.directory /opt/ros/overlay_ws/src/pycram
-WORKDIR /opt/ros/overlay_ws/src/pycram/examples/tmp
-EXPOSE 8888
+# Extra steps for binderhub
+RUN git config --global --add safe.directory ${ROS_WS}/src/pycram
+WORKDIR ${ROS_WS}/src/pycram/notebooks
 
-COPY entrypoint.sh /
+RUN pip uninstall -y jupyterlab_examples_cell_toolbar
+
+COPY --chown=${NB_USER}:users entrypoint.sh /
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 USER ${NB_USER}

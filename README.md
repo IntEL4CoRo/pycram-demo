@@ -7,5 +7,7 @@ Run on Binderhub:
 
 Run on local PC
 ```
-docker build -t pycram-demo . && docker run -p 8888:8888 --rm pycram-demo
+xhost +local:docker && \
+docker build -t pycramdemo:latest . && docker run -p 8888:8888 --rm pycramdemo:latest jupyter lab --NotebookApp.token='' && \
+xhost -local:docker
 ```

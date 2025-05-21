@@ -1,9 +1,6 @@
 #!/bin/bash
 
-set -e
-
-source /opt/ros/overlay_ws/devel/setup.bash
-
-roscore &
+source ${ROS_PATH}/setup.bash
+source ${ROS_WS}/install/setup.bash
 
 exec "$@"
