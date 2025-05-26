@@ -39,8 +39,9 @@ WORKDIR ${ROS_WS}/src/pycram/notebooks
 
 RUN pip uninstall -y jupyterlab_examples_cell_toolbar
 
-COPY --chown=${NB_USER}:users pycram.jupyterlab-workspace ${ROS_WS}/src/pycram/notebooks
-RUN jupyter lab workspaces import ${PWD}/pycram.jupyterlab-workspace
+COPY --chown=${NB_USER}:users utils.py ${ROS_WS}/src/pycram/notebooks
+COPY --chown=${NB_USER}:users pycram.rviz ${ROS_WS}/src/pycram/notebooks
+RUN ln -s ${ROS_WS}/src/pycram/notebooks/utils.py /home/jovyan/.ipython/profile_default/startup/00-first.py
 
 COPY --chown=${NB_USER}:users entrypoint.sh /
 RUN chmod +x /entrypoint.sh
