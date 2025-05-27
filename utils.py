@@ -1,3 +1,6 @@
+# This file is to setup the visualization tools for pycram notebooks.
+# Will be run automatically when opening a notebook on BinderHub.
+
 import os
 from IPython.display import display, HTML
 from sidecar import Sidecar
@@ -5,6 +8,7 @@ import subprocess
 import threading
 from time import sleep
 from IPython import get_ipython
+from pycram.datastructures.enums import WorldMode
 from pycram.ros_utils.viz_marker_publisher import VizMarkerPublisher
 
 # Display remote desktop on sidecar tab
@@ -49,16 +53,15 @@ def run_background_command(cmd):
         stderr=subprocess.PIPE,
         preexec_fn=os.setpgrp
     )
-    print(f"Started process with PID {process.pid}")
+    # print(f"Started process with PID {process.pid}")
     process.wait()
 
 # Run rivz2 in the background
 def launch_rviz(config='pycram.rviz'):
     try:
         subprocess.run(["killall", "rviz2"], check=False)
-        print("Closing previous opened rviz2...")
     except Exception as e:
-        print("Close rviz2 error：", e)
+        pass
     thread = threading.Thread(target=run_background_command, kwargs={
         "cmd":["rviz2", "-d", config]
     }, daemon=True)
@@ -66,12 +69,14 @@ def launch_rviz(config='pycram.rviz'):
 
 # Init visualization tools when running notebook on binderhub
 def _init_visual_tools(result):
-    cell_code = result.info.raw_cell
-    if "BulletWorld(mode=WorldMode.DIRECT)" in cell_code:
-        viz_marker_publisher = VizMarkerPublisher()
+    if result.error_in_exec is not None:
+        return
+    if "BulletWorld" in result.info.raw_cell and world is not None:
         display_desktop()
         sleep(3)
-        launch_rviz()
+        if world.mode == WorldMode.DIRECT:
+            viz_marker_publisher = VizMarkerPublisher()
+            launch_rviz()
         ip.events.unregister('post_run_cell', _init_visual_tools)
 
 ip = get_ipython()
