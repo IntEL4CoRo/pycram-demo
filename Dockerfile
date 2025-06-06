@@ -1,4 +1,4 @@
-FROM intel4coro/jupyter-ros2:jazzy-py3.12
+FROM intel4coro/base-notebook:20.04-noetic-vnc
 
 USER ${NB_USER}
 # Setup up a ROS workspace
@@ -8,18 +8,22 @@ RUN mkdir -p ${ROS_WS}/src
 # Clone pycram and its dependencies repos
 WORKDIR ${ROS_WS}/src
 RUN vcs import --input https://raw.githubusercontent.com/cram2/pycram/dev/rosinstall/pycram-ros2-https.rosinstall
+RUN git config --global --add safe.directory ${ROS_WS}/src/pycram
+RUN cd ${ROS_WS}/src/pycram && \
+    git fetch && \
+    git checkout v1.0.4
 
-# # init submodule repo with ssh url in .gitmodules
-# RUN  cd ${ROS_WS}/src/pycram \
-#   && perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules \
-#   && git submodule sync \
-#   && git submodule update --init --recursive
+# init submodule repo with ssh url in .gitmodules
+RUN  cd ${ROS_WS}/src/pycram \
+  && perl -i -p -e 's|git@(.*?):|https://\1/|g' .gitmodules \
+  && git submodule sync \
+  && git submodule update --init --recursive
 
 # # Building ROS workspace
 WORKDIR ${ROS_WS}
-RUN source /opt/ros/jazzy/setup.bash && \
-    colcon build --symlink-install --parallel-workers 4
-RUN echo "source ${ROS_WS}/install/setup.bash" >> ${HOME}/.bashrc
+RUN source /opt/ros/${ROS_DISTRO}/setup.bash && \
+    catkin build -j 4
+RUN echo "source ${ROS_WS}/devel/setup.bash" >> ${HOME}/.bashrc
 
 # # Install Python dependencies
 WORKDIR ${ROS_WS}/src/pycram

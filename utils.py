@@ -59,11 +59,11 @@ def run_background_command(cmd):
 # Run rivz2 in the background
 def launch_rviz(config='pycram.rviz'):
     try:
-        subprocess.run(["killall", "rviz2"], check=False)
+        subprocess.run(["killall", "rviz"], check=False)
     except Exception as e:
         pass
     thread = threading.Thread(target=run_background_command, kwargs={
-        "cmd":["rviz2", "-d", config]
+        "cmd":["rviz", "-d", config]
     }, daemon=True)
     thread.start()
 
