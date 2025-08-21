@@ -5,4 +5,4 @@ source ${ROS_WS}/devel/setup.bash
 
 roscore &
 
-exec "$@"
+exec vglrun "$@"
