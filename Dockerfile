@@ -27,6 +27,14 @@ RUN echo "source ${ROS_WS}/install/setup.bash" >> ${HOME}/.bashrc
 WORKDIR ${ROS_WS}/src/pycram
 RUN pip install -r requirements.txt
 
+# Convenience for interactive shells
+USER root
+RUN apt install graphviz graphviz-dev -y && apt-get clean && rm -rf /var/lib/apt/lists/*
+USER ${NB_USER}
+
+WORKDIR ${ROS_WS}/src/
+RUN source /opt/ros/jazzy/setup.bash && pip install -r semantic_world/requirements.txt && pip install -e semantic_world
+
 # Steps copy from github CI
 RUN pip install jupytext treon
 RUN cd ${ROS_WS}/src/pycram/examples && \
