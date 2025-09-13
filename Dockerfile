@@ -33,7 +33,9 @@ RUN apt install graphviz graphviz-dev -y && apt-get clean && rm -rf /var/lib/apt
 USER ${NB_USER}
 
 WORKDIR ${ROS_WS}/src/
-RUN source /opt/ros/jazzy/setup.bash && pip install -r semantic_world/requirements.txt && pip install -e semantic_world
+RUN source /opt/ros/jazzy/setup.bash && \
+    pip install -r semantic_world/requirements.txt && \
+    pip install -e semantic_world
 
 # Steps copy from github CI
 RUN pip install jupytext treon
@@ -45,16 +47,17 @@ RUN cd ${ROS_WS}/src/pycram/examples && \
 
 # Extra steps for binderhub
 RUN git config --global --add safe.directory ${ROS_WS}/src/pycram
-WORKDIR ${ROS_WS}/src/pycram
+WORKDIR ${ROS_WS}/src/pycram/demos/laboratory_demo/
 
 RUN pip uninstall -y jupyterlab_examples_cell_toolbar
 
-COPY --chown=${NB_USER}:users utils.py ${ROS_WS}/src/pycram/notebooks
-COPY --chown=${NB_USER}:users pycram.rviz ${ROS_WS}/src/pycram/notebooks
+COPY --chown=${NB_USER}:users utils.py ${ROS_WS}/src/pycram/demos/laboratory_demo/
+COPY --chown=${NB_USER}:users pycram.rviz ${ROS_WS}/src/pycram/demos/laboratory_demo/
 RUN ipython profile create && \
-    ln -s ${ROS_WS}/src/pycram/notebooks/utils.py /home/jovyan/.ipython/profile_default/startup/00-first.py
+    ln -s ${ROS_WS}/src/pycram/demos/laboratory_demo/utils.py /home/jovyan/.ipython/profile_default/startup/00-first.py
 
 COPY --chown=${NB_USER}:users entrypoint.sh /
 RUN chmod +x /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
+WORKDIR ${ROS_WS}/src/pycram/demos/laboratory_demo/
 USER ${NB_USER}
